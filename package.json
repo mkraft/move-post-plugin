@@ -6,7 +6,8 @@
     "scripts": {
         "build": "rm -rf dist && webpack --mode=production",
         "bundle": "./bundle.sh",
-        "deploy": "./deploy.sh"
+        "deploy": "./deploy.sh",
+        "watch": "watch 'npm run build && npm run bundle && npm run deploy' src/"
     },
     "author": "",
     "license": "",
@@ -15,6 +16,7 @@
         "@babel/preset-env": "^7.4.3",
         "@babel/preset-react": "^7.0.0",
         "babel-loader": "^8.0.5",
+        "watch": "^1.0.2",
         "webpack": "^4.30.0",
         "webpack-cli": "^3.3.0"
     },
