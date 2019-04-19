@@ -5,16 +5,20 @@ const Icon = () => <i className='icon fa fa-plug'/>;
 
 class HelloWorldPlugin {
     initialize(registry, store) {
-        registry.registerChannelHeaderButtonAction(
-            // icon - JSX element to use as the button's icon
-            <Icon />,
-            // action - a function called when the button is clicked, passed the channel and channel member as arguments
-            // null,
-            () => {
-                alert("Hello World!");
+        registry.registerPostDropdownMenuAction(
+            'Move Post',
+            (postID) => {
+                const post = store.getState().entities.posts.posts[postID];
+                console.log('postID', postID);
+                console.log('post', post);
             },
-            // dropdown_text - string or JSX element shown for the dropdown button description
-            "Hello World",
+            (postID) => {
+                const post = store.getState().entities.posts.posts[postID];
+                if (post && post.root_id.length === 0) {
+                    return true;
+                }
+                return false;
+            },
         );
     }
 }
