@@ -5,7 +5,8 @@
     "main": "src/index.js",
     "scripts": {
         "build": "rm -rf dist && webpack --mode=production",
-        "bundle": "./bundle.sh"
+        "bundle": "./bundle.sh",
+        "deploy": "./deploy.sh"
     },
     "author": "",
     "license": "",
