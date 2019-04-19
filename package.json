@@ -3,7 +3,10 @@
     "version": "0.0.1",
     "description": "",
     "main": "src/index.js",
-    "scripts": {},
+    "scripts": {
+        "build": "rm -rf dist && webpack --mode=production",
+        "bundle": "./bundle.sh"
+    },
     "author": "",
     "license": "",
     "devDependencies": {

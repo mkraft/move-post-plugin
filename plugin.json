@@ -1,6 +1,7 @@
 {
     "id": "com.mattermost.webapp-hello-world",
     "name": "Hello World",
+    "version": "",
     "webapp": {
         "bundle_path": "main.js"
     }
