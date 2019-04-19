@@ -7,7 +7,7 @@ TOKEN=$(curl -si -X POST \
   -H 'Content-Type: application/json' \
   -H 'Postman-Token: 7a1cde93-d994-47b3-af15-5060e23ad305' \
   -H 'cache-control: no-cache' \
-  -d "{\"login_id\":\"$MM_USER\",\"password\":\"$MM_PASSWORD\"}" | grep Token | cut -c 8-33)
+  -d "{\"login_id\":\"$MM_USERNAME\",\"password\":\"$MM_PASSWORD\"}" | grep Token | cut -c 8-33)
 
 curl -sX POST \
   http://localhost:8065/api/v4/plugins \
