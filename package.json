@@ -1,0 +1,20 @@
+{
+    "name": "webapp",
+    "version": "0.0.1",
+    "description": "",
+    "main": "src/index.js",
+    "scripts": {},
+    "author": "",
+    "license": "",
+    "devDependencies": {
+        "@babel/core": "^7.4.3",
+        "@babel/preset-env": "^7.4.3",
+        "@babel/preset-react": "^7.0.0",
+        "babel-loader": "^8.0.5",
+        "webpack": "^4.30.0",
+        "webpack-cli": "^3.3.0"
+    },
+    "dependencies": {
+        "react": "^16.8.6"
+    }
+}
