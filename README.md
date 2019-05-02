@@ -1,8 +1,7 @@
 ### Development setup
 
-1) Install Node v11.15.0 (or earlier)
-2) Install [jq](https://stedolan.github.io/jq/)
-3) `npm i`
+1) Install [jq](https://stedolan.github.io/jq/)
+2) `npm i`
 
 ### Build
 
