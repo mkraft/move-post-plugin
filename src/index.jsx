@@ -2,12 +2,8 @@ import React from 'react';
 
 import { createPostImmediately, deletePost, removePost } from 'mattermost-redux/actions/posts';
 
-// const css = ``;
-
 class HelloWorldPlugin {
     initialize(registry, store) {
-        // this.addStyles();
-
         registry.registerPostDropdownMenuAction(
             'Move to open thread',
             async (postID) => {
@@ -59,13 +55,6 @@ class HelloWorldPlugin {
             },
         );
     }
-
-    // addStyles() {
-    //     const style = document.createElement('style');
-    //     document.head.appendChild(style);
-    //     style.type = 'text/css';
-    //     style.appendChild(document.createTextNode(css));
-    // }
 }
 
 window.registerPlugin('com.mattermost.webapp-hello-world', new HelloWorldPlugin());
