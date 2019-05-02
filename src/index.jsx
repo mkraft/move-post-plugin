@@ -48,31 +48,32 @@ class MovePostPlugin {
                 // TODO: Figure out why files aren't moving over successfully.
             },
             (postID) => {
-                // Filter-out system messages.
                 const post = store.getState().entities.posts.posts[postID];
                 const { selectedPostId: threadPostID, selectedChannelId: threadChannelID } = store.getState().views.rhs;
 
+                // Can't move system messages.
                 if (!post || !threadPostID) {
                     return false;
                 }
 
+                // Can't move a message within its own thread.
+                if (post.id === threadPostID) {
+                    return false;
+                }
+
                 const { currentUserId } = store.getState().entities.users;
-                const currentTeamID = getCurrentTeamId(store.getState());
 
                 let canDoTheMove = false;
                 if (post.user_id === currentUserId) {
                     canDoTheMove = true;
-                } else {
+                } else if (this.isLicensed(store)) {
+                    const currentTeamID = getCurrentTeamId(store.getState());
                     const hasPermissionToSourceChannel = this.hasPermissionToEditAndDelete(post.channel_id, currentTeamID);
                     const hasPermissionToTargetChannel = this.hasPermissionToEditAndDelete(threadChannelID, currentTeamID);
                     canDoTheMove = hasPermissionToSourceChannel && hasPermissionToTargetChannel;
                 }
 
-                if ((post.id !== threadPostID) && canDoTheMove) {
-                    return true;
-                }
-
-                return false;
+                return canDoTheMove;
             },
         );
     }
@@ -82,6 +83,18 @@ class MovePostPlugin {
         const canDeletePost = haveIChannelPermission(store.getState(), { ...baseParam, ...{ permission: Permissions.DELETE_OTHERS_POSTS } });
         const canEditPost = haveIChannelPermission(store.getState(), { ...baseParam, ...{ permission: Permissions.EDIT_OTHERS_POSTS } });
         return canDeletePost && canEditPost;
+    }
+
+    isLicensed(store) {
+        let isLicensed = false;
+        let val = store.getState().entities.general.license.IsLicensed;
+        if (typeof val === "string") {
+            isLicensed = val === "true";
+        }
+        if (typeof val === "boolean") {
+            isLicensed = val;
+        }
+        return isLicensed;
     }
 }
 
