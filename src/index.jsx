@@ -1,6 +1,9 @@
 import React from 'react';
 
 import { createPostImmediately, deletePost, removePost } from 'mattermost-redux/actions/posts';
+import { haveIChannelPermission } from 'mattermost-redux/selectors/entities/roles';
+import { getCurrentTeamId } from 'mattermost-redux/selectors/entities/teams';
+import { Permissions } from 'mattermost-redux/constants';
 
 class MovePostPlugin {
     initialize(registry, store) {
@@ -47,13 +50,38 @@ class MovePostPlugin {
             (postID) => {
                 // Filter-out system messages.
                 const post = store.getState().entities.posts.posts[postID];
-                const threadPostID = store.getState().views.rhs.selectedPostId;
-                if (post && threadPostID && (post.id !== threadPostID)) {
+                const { selectedPostId: threadPostID, selectedChannelId: threadChannelID } = store.getState().views.rhs;
+
+                if (!post || !threadPostID) {
+                    return false;
+                }
+
+                const { currentUserId } = store.getState().entities.users;
+                const currentTeamID = getCurrentTeamId(store.getState());
+
+                let canDoTheMove = false;
+                if (post.user_id === currentUserId) {
+                    canDoTheMove = true;
+                } else {
+                    const hasPermissionToSourceChannel = this.hasPermissionToEditAndDelete(post.channel_id, currentTeamID);
+                    const hasPermissionToTargetChannel = this.hasPermissionToEditAndDelete(threadChannelID, currentTeamID);
+                    canDoTheMove = hasPermissionToSourceChannel && hasPermissionToTargetChannel;
+                }
+
+                if ((post.id !== threadPostID) && canDoTheMove) {
                     return true;
                 }
+
                 return false;
             },
         );
+    }
+
+    hasPermissionToEditAndDelete(channelID, teamID) {
+        const baseParam = { channel: channelID, team: teamID };
+        const canDeletePost = haveIChannelPermission(store.getState(), { ...baseParam, ...{ permission: Permissions.DELETE_OTHERS_POSTS } });
+        const canEditPost = haveIChannelPermission(store.getState(), { ...baseParam, ...{ permission: Permissions.EDIT_OTHERS_POSTS } });
+        return canDeletePost && canEditPost;
     }
 }
 
