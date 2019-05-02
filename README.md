@@ -37,4 +37,4 @@ MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 npm run watch
 - [ ] Better UX
 - [ ] Add ability to move a post to another team
 - [ ] Add a UX that also works on mobile web view
-- [ ] Add a configurable string template for the replacement text of the original post in case one wants to show something like `[<moved>](https://community.mattermost.com/private-core/pl/qiao7mwyrfgdbg4idp1ct7kj5z)`.
+- [ ] Add a configurable string template for the replacement text of the original post in case one wants to edit the original post message to something like `[<moved>](https://community.mattermost.com/private-core/pl/qiao7mwyrfgdbg4idp1ct7kj5z)` instead of deleting it.
