@@ -31,7 +31,7 @@ MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 npm run watch
 
 - [ ] Get files moving successfully
 - [ ] Only show the menu item for posts the current user authored, alternatively make the plugin configurable to work with permissions so some people can move others posts
-- [ ] Change the plugin name
+- [x] Change the plugin name
 - [ ] Remove the unused assets directory
 - [ ] Conditionally hide menu items that aren't able to be used on mobile view
 - [ ] Better UX

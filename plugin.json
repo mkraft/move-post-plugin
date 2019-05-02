@@ -1,6 +1,6 @@
 {
-    "id": "com.mattermost.webapp-hello-world",
-    "name": "Hello World",
+    "id": "com.mattermost.move-post-plugin",
+    "name": "Move Post",
     "version": "",
     "webapp": {
         "bundle_path": "main.js"

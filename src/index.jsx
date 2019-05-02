@@ -2,7 +2,7 @@ import React from 'react';
 
 import { createPostImmediately, deletePost, removePost } from 'mattermost-redux/actions/posts';
 
-class HelloWorldPlugin {
+class MovePostPlugin {
     initialize(registry, store) {
         registry.registerPostDropdownMenuAction(
             'Move to open thread',
@@ -57,4 +57,4 @@ class HelloWorldPlugin {
     }
 }
 
-window.registerPlugin('com.mattermost.webapp-hello-world', new HelloWorldPlugin());
+window.registerPlugin('com.mattermost.move-post-plugin', new MovePostPlugin());
