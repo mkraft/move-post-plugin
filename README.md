@@ -27,3 +27,4 @@ MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 npm run watch
 - [ ] Get files moving successfully
 - [ ] Only show the menu item for posts the current user authored
 - [ ] Add the ability to move a post to a different channel
+- [ ] Change the plugin name
