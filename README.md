@@ -25,6 +25,6 @@ MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 npm run watch
 ### TODO
 
 - [ ] Get files moving successfully
-- [ ] Only show the menu item for posts the current user authored
+- [ ] Only show the menu item for posts the current user authored, alternatively make the plugin configurable to work with permissions so some people can move others posts
 - [ ] Change the plugin name
 - [ ] Remove the unused assets directory
