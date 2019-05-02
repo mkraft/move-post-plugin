@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { createPostImmediately } from 'mattermost-redux/actions/posts';
+import { createPostImmediately, deletePost, removePost } from 'mattermost-redux/actions/posts';
 
 // const css = ``;
 
@@ -10,7 +10,7 @@ class HelloWorldPlugin {
 
         registry.registerPostDropdownMenuAction(
             'Move to open thread',
-            (postID) => {
+            async (postID) => {
                 const post = store.getState().entities.posts.posts[postID];
                 const { selectedPostId: rhsPostID, selectedChannelId: rhsChannelID } = store.getState().views.rhs;
                 if (!post || !rhsPostID) {
@@ -42,8 +42,11 @@ class HelloWorldPlugin {
                     });
                 }
 
-                store.dispatch(createPostImmediately(newPost, files));
+                await store.dispatch(createPostImmediately(newPost, files));
+                await store.dispatch(deletePost(post));
+                store.dispatch(removePost(post));
 
+                // TODO: Figure out why files aren't moving over successfully.
             },
             (postID) => {
                 // Filter-out system messages.
