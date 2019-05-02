@@ -46,9 +46,22 @@ class MovePostPlugin {
             });
         }
 
-        await store.dispatch(createPostImmediately(newPost, files));
-        await store.dispatch(deletePost(post));
-        store.dispatch(removePost(post));
+        const {error: createErr} = await store.dispatch(createPostImmediately(newPost, files));
+        if (createErr) {
+            console.warn(`Error creating new post: ${createErr}`);
+            return;
+        }
+        
+        const {error: deleteErr} = await store.dispatch(deletePost(post));
+        if (deleteErr) {
+            console.warn(`Error deleting old post: ${deleteErr}`);
+            return;
+        }
+
+        const {error: removeErr} = store.dispatch(removePost(post));
+        if (removeErr) {
+            console.warn(`Error removing old post: ${removeErr}`);
+        }
 
         // TODO: Figure out why files aren't moving over successfully.
     }
