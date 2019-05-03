@@ -4,5 +4,34 @@
     "version": "",
     "webapp": {
         "bundle_path": "main.js"
+    },
+    "settings_schema": {
+        "settings": [
+            {
+                "key": "originalPostBehaviour",
+                "display_name": "Original Post Behaviour",
+                "type": "dropdown",
+                "help_text": "What to do with the original post that was moved: delete it or replace it with a string using the replacement template.",
+                "default": "",
+                "options": [
+                    {
+                        "display_name": "Delete it",
+                        "value": "delete"
+                    },
+                    {
+                        "display_name": "Replace it with string",
+                        "value": "template"
+                    }
+                ]
+            },
+            {
+                "key": "template",
+                "display_name": "Replacement Template",
+                "type": "text",
+                "help_text": "The template to invoke when replacing the original post. `{{Permalink}}` will be replace by the permalink to the new post.",
+                "placeholder": "[<moved>]({{Permalink}})",
+                "default": "[<moved>]({{Permalink}})"
+            }
+        ]
     }
 }

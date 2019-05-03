@@ -1,17 +1,26 @@
 import React from 'react';
 
-import { createPostImmediately, deletePost, removePost } from 'mattermost-redux/actions/posts';
+import { createPostImmediately, deletePost, removePost, editPost } from 'mattermost-redux/actions/posts';
+import { getConfig } from 'mattermost-redux/actions/admin';
 import { haveIChannelPermission } from 'mattermost-redux/selectors/entities/roles';
 import { getCurrentTeamId } from 'mattermost-redux/selectors/entities/teams';
 import { Permissions } from 'mattermost-redux/constants';
 
+let behaviour = '';
+let templateStr = '';
+
 class MovePostPlugin {
-    initialize(registry, store) {
+    async initialize(registry, store) {
         registry.registerPostDropdownMenuAction(
             'Move to open thread',
             (postID) => this.onClickMenuItem(postID),
             (postID) => this.shouldShowMenuItem(postID)
         );
+
+        const response = await store.dispatch(getConfig());
+        const { originalpostbehaviour, template } = response.data.PluginSettings.Plugins['com.mattermost.move-post-plugin'];
+        behaviour = originalpostbehaviour;
+        templateStr = template;
     }
 
     async onClickMenuItem(postID) {
@@ -37,33 +46,48 @@ class MovePostPlugin {
 
         let files = [];
 
-        if (post.file_ids) {
-            files = post.file_ids.map((id) => {
-                const stateFileInfo = store.getState().entities.files.files[id];
-                const fileInfo = { ...stateFileInfo };
-                delete fileInfo.post_id;
-                return fileInfo;
-            });
-        }
+        // if (post.file_ids) {
+        //     files = post.file_ids.map((id) => {
+        //         const stateFileInfo = store.getState().entities.files.files[id];
+        //         const fileInfo = { ...stateFileInfo };
+        //         delete fileInfo.post_id;
+        //         return fileInfo;
+        //     });
+        // }
 
-        const {error: createErr} = await store.dispatch(createPostImmediately(newPost, files));
+        const { error: createErr, data: newPostData } = await store.dispatch(createPostImmediately(newPost, files));
         if (createErr) {
             console.warn(`Error creating new post: ${createErr}`);
             return;
         }
-        
-        const {error: deleteErr} = await store.dispatch(deletePost(post));
-        if (deleteErr) {
-            console.warn(`Error deleting old post: ${deleteErr}`);
-            return;
-        }
 
-        const {error: removeErr} = store.dispatch(removePost(post));
-        if (removeErr) {
-            console.warn(`Error removing old post: ${removeErr}`);
-        }
+        console.log('behaviour', behaviour);
 
-        // TODO: Figure out why files aren't moving over successfully.
+        if (behaviour === 'template') {
+            const currentTeamID = getCurrentTeamId(store.getState());
+            const { name: currentTeamName } = store.getState().entities.teams.teams[currentTeamID];
+            const { SiteURL: basePath } = store.getState().entities.general.config;
+            const permalink = `${basePath}/${currentTeamName}/pl/${newPostData.id}`
+            const replacementMessage = templateStr.replace('{{Permalink}}', permalink);
+            const editingPost = { ...post };
+            editingPost.message = replacementMessage;
+            const { error: editError } = await store.dispatch(editPost(editingPost));
+            if (editError) {
+                console.warn(`Error editing old post: ${editError}`);
+                return;
+            }
+        } else {
+            const { error: deleteErr } = await store.dispatch(deletePost(post));
+            if (deleteErr) {
+                console.warn(`Error deleting old post: ${deleteErr}`);
+                return;
+            }
+
+            const { error: removeErr } = store.dispatch(removePost(post));
+            if (removeErr) {
+                console.warn(`Error removing old post: ${removeErr}`);
+            }
+        }
     }
 
     shouldShowMenuItem(postID) {
@@ -77,6 +101,16 @@ class MovePostPlugin {
 
         // Can't move a message within its own thread.
         if (post.id === threadPostID) {
+            return false;
+        }
+
+        // The plugin doesn't yet support moving a thread, only an individual post.
+        if (store.getState().entities.posts.postsInThread[postID]) {
+            return false;
+        }
+
+        // The plugin doesn't yet support moving a post with attached files.
+        if (post.file_ids) {
             return false;
         }
 
