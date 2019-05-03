@@ -35,8 +35,7 @@ MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 npm run watch
 ### TODO
 
 - [ ] Deal with moving a root thread that itself has child posts
-- [ ] Get files moving successfully, perhaps they need to be re-uploaded?
-- [ ] Add a configurable string template for the replacement text of the original post in case one wants to edit the original post message to something like `[<moved>](https://community.mattermost.com/private-core/pl/qiao7mwyrfgdbg4idp1ct7kj5z)` instead of deleting it.
+- [ ] Get files moving successfully
 - [ ] Conditionally hide menu items that aren't able to be used on mobile view
 - [ ] Better UX
 - [ ] Add ability to move a post to another team
