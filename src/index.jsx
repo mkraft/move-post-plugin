@@ -3,11 +3,12 @@ import { createPostImmediately, deletePost, removePost, editPost } from 'matterm
 import { getConfig } from 'mattermost-redux/actions/admin';
 import { haveIChannelPermission } from 'mattermost-redux/selectors/entities/roles';
 import { getCurrentTeamId } from 'mattermost-redux/selectors/entities/teams';
+import { getCurrentUser } from 'mattermost-redux/selectors/entities/users';
 import { Permissions } from 'mattermost-redux/constants';
 
 const MOVE_BEHAVIOUR_TEMPLATE = 'template';
 const TEMPLATE_VARIABLE_PERMALINK = '{{Permalink}}';
-const TEMPLATE_VARIABLE_NEW_POST_ID = '{{NewPostID}}';
+const TEMPLATE_MOVER_USERNAME = '{{MoverUsername}}';
 
 let moveBehaviour = '';
 let editTemplate = '';
@@ -152,11 +153,12 @@ class MovePostPlugin {
 
     getReplacementMessage(state, newPostID) {
         const currentTeamID = getCurrentTeamId(state);
+        const { username: moverUsername } = getCurrentUser(state);
         const { name: currentTeamName } = state.entities.teams.teams[currentTeamID];
         const { SiteURL: basePath } = state.entities.general.config;
         const permalink = `${basePath}/${currentTeamName}/pl/${newPostID}`
         let replacementMessage = editTemplate.replace(TEMPLATE_VARIABLE_PERMALINK, permalink);
-        replacementMessage = replacementMessage.replace(TEMPLATE_VARIABLE_NEW_POST_ID, newPostID);
+        replacementMessage = replacementMessage.replace(TEMPLATE_MOVER_USERNAME, moverUsername);
         return replacementMessage;
     }
 }

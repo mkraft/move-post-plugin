@@ -11,7 +11,7 @@
                 "key": "move_behaviour",
                 "display_name": "Original Post Behaviour",
                 "type": "dropdown",
-                "help_text": "What to do with the original post that was moved: delete it or replace it with a string using the replacement template.",
+                "help_text": "The post that was moved can either be delete or automatically edited to replace the post message with a string using the configured replacement template.",
                 "default": "",
                 "options": [
                     {
@@ -19,7 +19,7 @@
                         "value": "delete"
                     },
                     {
-                        "display_name": "Replace it with string",
+                        "display_name": "Replace it with string using the template",
                         "value": "template"
                     }
                 ]
@@ -28,9 +28,9 @@
                 "key": "edit_template",
                 "display_name": "Replacement Template",
                 "type": "text",
-                "help_text": "The template to be used when replacing the original post. Markdown may be used just like a normal post and `{{Permalink}}` and `{{NewPostID}}` template variables are interpolated.",
-                "placeholder": "[<moved>]({{Permalink}})",
-                "default": "[<moved>]({{Permalink}})"
+                "help_text": "The template to be used when replacing the original post instead of deleting it. Markdown is accepted and the template variables `{{Permalink}}` and `{{MoverUsername}}` are interpolated.",
+                "placeholder": "[moved to thread]({{Permalink}}) by {{MoverUsername}}",
+                "default": "[moved to thread]({{Permalink}}) by {{MoverUsername}}"
             }
         ]
     }
