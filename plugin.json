@@ -8,7 +8,7 @@
     "settings_schema": {
         "settings": [
             {
-                "key": "originalPostBehaviour",
+                "key": "move_behaviour",
                 "display_name": "Original Post Behaviour",
                 "type": "dropdown",
                 "help_text": "What to do with the original post that was moved: delete it or replace it with a string using the replacement template.",
@@ -25,7 +25,7 @@
                 ]
             },
             {
-                "key": "template",
+                "key": "edit_template",
                 "display_name": "Replacement Template",
                 "type": "text",
                 "help_text": "The template to invoke when replacing the original post. `{{Permalink}}` will be replace by the permalink to the new post.",

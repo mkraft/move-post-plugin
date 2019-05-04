@@ -6,8 +6,10 @@ import { haveIChannelPermission } from 'mattermost-redux/selectors/entities/role
 import { getCurrentTeamId } from 'mattermost-redux/selectors/entities/teams';
 import { Permissions } from 'mattermost-redux/constants';
 
-let behaviour = '';
-let templateStr = '';
+const MOVE_BEHAVIOUR_TEMPLATE = 'template';
+
+let moveBehaviour = '';
+let editTemplate = '';
 
 class MovePostPlugin {
     async initialize(registry, store) {
@@ -18,14 +20,15 @@ class MovePostPlugin {
         );
 
         const response = await store.dispatch(getConfig());
-        const { originalpostbehaviour, template } = response.data.PluginSettings.Plugins['com.mattermost.move-post-plugin'];
-        behaviour = originalpostbehaviour;
-        templateStr = template;
+        const { move_behaviour, edit_template } = response.data.PluginSettings.Plugins['com.mattermost.move-post-plugin'];
+        moveBehaviour = move_behaviour;
+        editTemplate = edit_template;
     }
 
     async onClickMenuItem(postID) {
-        const post = store.getState().entities.posts.posts[postID];
-        const { selectedPostId: rhsPostID, selectedChannelId: rhsChannelID } = store.getState().views.rhs;
+        const state = store.getState();
+        const post = state.entities.posts.posts[postID];
+        const { selectedPostId: rhsPostID, selectedChannelId: rhsChannelID } = state.views.rhs;
         if (!post || !rhsPostID) {
             console.warn(`not able to move post_id: ${post.id}, rhsPostID: ${rhsPostID}`);
             return
@@ -48,7 +51,7 @@ class MovePostPlugin {
 
         // if (post.file_ids) {
         //     files = post.file_ids.map((id) => {
-        //         const stateFileInfo = store.getState().entities.files.files[id];
+        //         const stateFileInfo = state.entities.files.files[id];
         //         const fileInfo = { ...stateFileInfo };
         //         delete fileInfo.post_id;
         //         return fileInfo;
@@ -61,16 +64,10 @@ class MovePostPlugin {
             return;
         }
 
-        console.log('behaviour', behaviour);
-
-        if (behaviour === 'template') {
-            const currentTeamID = getCurrentTeamId(store.getState());
-            const { name: currentTeamName } = store.getState().entities.teams.teams[currentTeamID];
-            const { SiteURL: basePath } = store.getState().entities.general.config;
-            const permalink = `${basePath}/${currentTeamName}/pl/${newPostData.id}`
-            const replacementMessage = templateStr.replace('{{Permalink}}', permalink);
-            const editingPost = { ...post };
-            editingPost.message = replacementMessage;
+        if (moveBehaviour === MOVE_BEHAVIOUR_TEMPLATE) {
+            const message = this.getReplacementMessage(state, newPostData.id);
+            const editingPost = { ...post, ...{ message } };
+            
             const { error: editError } = await store.dispatch(editPost(editingPost));
             if (editError) {
                 console.warn(`Error editing old post: ${editError}`);
@@ -91,8 +88,9 @@ class MovePostPlugin {
     }
 
     shouldShowMenuItem(postID) {
-        const post = store.getState().entities.posts.posts[postID];
-        const { selectedPostId: threadPostID, selectedChannelId: threadChannelID } = store.getState().views.rhs;
+        const state = store.getState();
+        const post = state.entities.posts.posts[postID];
+        const { selectedPostId: threadPostID, selectedChannelId: threadChannelID } = state.views.rhs;
 
         // Can't move system messages.
         if (!post || !threadPostID) {
@@ -100,12 +98,12 @@ class MovePostPlugin {
         }
 
         // Can't move a message within its own thread.
-        if (post.id === threadPostID) {
+        if (post.id === threadPostID || post.root_id === threadPostID) {
             return false;
         }
 
         // The plugin doesn't yet support moving a thread, only an individual post.
-        if (store.getState().entities.posts.postsInThread[postID]) {
+        if (state.entities.posts.postsInThread[postID] || post.root_id !== "") {
             return false;
         }
 
@@ -114,31 +112,31 @@ class MovePostPlugin {
             return false;
         }
 
-        const { currentUserId } = store.getState().entities.users;
+        const { currentUserId } = state.entities.users;
 
         let canDoTheMove = false;
         if (post.user_id === currentUserId) {
             canDoTheMove = true;
-        } else if (this.isLicensed(store)) {
-            const currentTeamID = getCurrentTeamId(store.getState());
-            const hasPermissionsToSourceChannel = this.hasRequiredPermissions(post.channel_id, currentTeamID);
-            const hasPermissionsToTargetChannel = this.hasRequiredPermissions(threadChannelID, currentTeamID);
+        } else if (this.isLicensed(state)) {
+            const currentTeamID = getCurrentTeamId(state);
+            const hasPermissionsToSourceChannel = this.hasRequiredPermissions(state, post.channel_id, currentTeamID);
+            const hasPermissionsToTargetChannel = this.hasRequiredPermissions(state, threadChannelID, currentTeamID);
             canDoTheMove = hasPermissionsToSourceChannel && hasPermissionsToTargetChannel;
         }
 
         return canDoTheMove;
     }
 
-    hasRequiredPermissions(channelID, teamID) {
+    hasRequiredPermissions(state, channelID, teamID) {
         const baseParam = { channel: channelID, team: teamID };
-        const canDeletePost = haveIChannelPermission(store.getState(), { ...baseParam, ...{ permission: Permissions.DELETE_OTHERS_POSTS } });
-        const canEditPost = haveIChannelPermission(store.getState(), { ...baseParam, ...{ permission: Permissions.EDIT_OTHERS_POSTS } });
+        const canDeletePost = haveIChannelPermission(state, { ...baseParam, ...{ permission: Permissions.DELETE_OTHERS_POSTS } });
+        const canEditPost = haveIChannelPermission(state, { ...baseParam, ...{ permission: Permissions.EDIT_OTHERS_POSTS } });
         return canDeletePost && canEditPost;
     }
 
-    isLicensed(store) {
+    isLicensed(state) {
         let isLicensed = false;
-        let val = store.getState().entities.general.license.IsLicensed;
+        let val = state.entities.general.license.IsLicensed;
         if (typeof val === "string") {
             isLicensed = val === "true";
         }
@@ -146,6 +144,15 @@ class MovePostPlugin {
             isLicensed = val;
         }
         return isLicensed;
+    }
+
+    getReplacementMessage(state, newPostID) {
+        const currentTeamID = getCurrentTeamId(state);
+        const { name: currentTeamName } = state.entities.teams.teams[currentTeamID];
+        const { SiteURL: basePath } = state.entities.general.config;
+        const permalink = `${basePath}/${currentTeamName}/pl/${newPostID}`
+        const replacementMessage = editTemplate.replace('{{Permalink}}', permalink);
+        return replacementMessage;
     }
 }
 
