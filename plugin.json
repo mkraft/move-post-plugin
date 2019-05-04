@@ -28,7 +28,7 @@
                 "key": "edit_template",
                 "display_name": "Replacement Template",
                 "type": "text",
-                "help_text": "The template to invoke when replacing the original post. `{{Permalink}}` will be replace by the permalink to the new post.",
+                "help_text": "The template to be used when replacing the original post. Markdown may be used just like a normal post and `{{Permalink}}` and `{{NewPostID}}` template variables are interpolated.",
                 "placeholder": "[<moved>]({{Permalink}})",
                 "default": "[<moved>]({{Permalink}})"
             }
