@@ -6,12 +6,10 @@ import { getCurrentTeamId } from 'mattermost-redux/selectors/entities/teams';
 import { getCurrentUser } from 'mattermost-redux/selectors/entities/users';
 import { Permissions } from 'mattermost-redux/constants';
 
-const MOVE_BEHAVIOUR_TEMPLATE = 'template';
 const TEMPLATE_VARIABLE_PERMALINK = '{{Permalink}}';
 const TEMPLATE_VARIABLE_MOVER_USERNAME = '{{MoverUsername}}';
 
-let moveBehaviour = '';
-let editTemplate = '';
+let moveOthersTemplate = '';
 
 class MovePostPlugin {
     async initialize(registry, store) {
@@ -22,9 +20,8 @@ class MovePostPlugin {
         );
 
         const response = await store.dispatch(getConfig());
-        const { move_behaviour, edit_template } = response.data.PluginSettings.Plugins[registry.id];
-        moveBehaviour = move_behaviour;
-        editTemplate = edit_template;
+        const { move_others_template } = response.data.PluginSettings.Plugins[registry.id];
+        moveOthersTemplate = move_others_template;
     }
 
     async onClickMenuItem(postID) {
@@ -67,7 +64,8 @@ class MovePostPlugin {
             return;
         }
 
-        if (moveBehaviour === MOVE_BEHAVIOUR_TEMPLATE) {
+        const { id: currentUserID } = getCurrentUser(state);
+        if (post.user_id !== currentUserID) {
             const message = this.getReplacementMessage(state, newPostData.id);
             const editingPost = { ...post, ...{ message } };
 
@@ -157,7 +155,7 @@ class MovePostPlugin {
         const { name: currentTeamName } = state.entities.teams.teams[currentTeamID];
         const { SiteURL: basePath } = state.entities.general.config;
         const permalink = `${basePath}/${currentTeamName}/pl/${newPostID}`
-        let replacementMessage = editTemplate.replace(TEMPLATE_VARIABLE_PERMALINK, permalink);
+        let replacementMessage = moveOthersTemplate.replace(TEMPLATE_VARIABLE_PERMALINK, permalink);
         replacementMessage = replacementMessage.replace(TEMPLATE_VARIABLE_MOVER_USERNAME, moverUsername);
         return replacementMessage;
     }
