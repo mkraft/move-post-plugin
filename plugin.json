@@ -12,8 +12,8 @@
                 "display_name": "Move Others' Posts Template (Requires Enterprise License)",
                 "type": "text",
                 "help_text": "The template for the replacement text when moving others' posts. Markdown is accepted and the template variables `{{Permalink}}` and `{{MoverUsername}}` are interpolated.",
-                "placeholder": "[moved to thread]({{Permalink}}) by {{MoverUsername}}",
-                "default": "[moved to thread]({{Permalink}}) by {{MoverUsername}}"
+                "placeholder": "[moved to thread]({{Permalink}}) by @{{MoverUsername}}",
+                "default": "[moved to thread]({{Permalink}}) by @{{MoverUsername}}"
             }
         ]
     }
