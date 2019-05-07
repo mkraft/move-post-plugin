@@ -1,5 +1,5 @@
 PLUGIN_ID=$(cat "./plugin.json" | jq -r '.id')
-VERSION=$(cat "./package.json" | jq -r '.version')
+VERSION=$(cat "./plugin.json" | jq -r '.version')
 BUNDLE_NAME=${PLUGIN_ID}-${VERSION}.tar.gz
 
 TOKEN=$(curl -si -X POST \

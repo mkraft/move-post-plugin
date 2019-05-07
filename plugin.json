@@ -1,9 +1,16 @@
 {
     "id": "com.mattermost.move-post-plugin",
     "name": "Move Post",
-    "version": "",
+    "version": "0.0.1",
     "webapp": {
-        "bundle_path": "main.js"
+        "bundle_path": "webapp/main.js"
+    },
+    "server": {
+        "executables": {
+            "linux-amd64": "server/plugin-linux-amd64",
+            "darwin-amd64": "server/plugin-darwin-amd64",
+            "windows-amd64": "server/plugin-windows-amd64.exe"
+        }
     },
     "settings_schema": {
         "settings": [

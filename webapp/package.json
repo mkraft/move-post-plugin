@@ -1,13 +1,10 @@
 {
     "name": "move-post-plugin",
-    "version": "0.0.1",
+    "version": "0.0.0",
     "description": "",
     "main": "src/index.js",
     "scripts": {
-        "build": "rm -rf dist && webpack --mode=production",
-        "bundle": "./bundle.sh",
-        "deploy": "./deploy.sh",
-        "watch": "watch 'npm run build && npm run bundle && npm run deploy' src/ assets/"
+        "build": "rm -rf dist && webpack --mode=production"
     },
     "author": "",
     "license": "",

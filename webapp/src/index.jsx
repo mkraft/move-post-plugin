@@ -58,6 +58,8 @@ class MovePostPlugin {
         //     });
         // }
 
+        console.log('newPost', JSON.stringify(newPost));
+
         const { error: createErr, data: newPostData } = await store.dispatch(createPostImmediately(newPost, files));
         if (createErr) {
             console.warn(`Error creating new post: ${createErr}`);
