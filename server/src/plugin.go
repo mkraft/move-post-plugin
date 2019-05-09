@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 
@@ -12,34 +15,20 @@ import (
 	"golang.org/x/xerrors"
 )
 
+const PluginConfigMoveOthersTemplate = "move_others_template"
+
 type MovePostPlugin struct {
 	plugin.MattermostPlugin
 }
 
-type PermissionDeniedError struct {
-	Permission *model.Permission
-	ChannelID  string
-	frame      xerrors.Frame
-}
-
-func (e PermissionDeniedError) Error() string {
-	return fmt.Sprintf("permission denied error permission_id=%s channel_id=%s", e.Permission.Id, e.ChannelID)
-}
-
-func (e PermissionDeniedError) Format(f fmt.State, c rune) {
-	xerrors.FormatError(e, f, c)
-}
-
-func (e PermissionDeniedError) FormatError(p xerrors.Printer) error {
-	p.Print(e.Error())
-	if p.Detail() {
-		e.frame.Format(p)
-	}
-	return nil
-}
-
-type MovePayload struct {
+type payload struct {
 	ThreadID string `json:"thread_id"`
+}
+
+type templateData struct {
+	Permalink     string
+	MoverUsername string
+	Message       string
 }
 
 func (p *MovePostPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -59,50 +48,135 @@ func (p *MovePostPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *
 	currentUserID := header[0]
 	postID := r.URL.Path[14:40]
 
-	decoder := json.NewDecoder(r.Body)
-	var payload MovePayload
-	err := decoder.Decode(&payload)
+	defer r.Body.Close()
+
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		p.API.LogError(fmt.Sprintf("error decoding JSON: %s", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if len(payload.ThreadID) != 26 {
-		p.API.LogError("invalid thread id", "thread_id", payload.ThreadID)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	err = p.hasMoveAccess(currentUserID, postID)
+	var pl payload
+	err = json.Unmarshal(body, &pl)
 	if err != nil {
-		p.API.LogError(fmt.Sprintf("%+v", err), "user_id", currentUserID, "post_id", postID)
+		p.API.LogError(fmt.Sprintf("error unmarshaling json: %s", err.Error()))
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
+	if len(pl.ThreadID) != 26 {
+		p.API.LogError("invalid thread id", "thread_id", pl.ThreadID)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	var appErr *model.AppError
+	post, appErr := p.API.GetPost(postID)
+	if appErr != nil {
+		p.API.LogError(fmt.Sprintf("error retrieving post: %s", appErr.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	threadPost, appErr := p.API.GetPost(pl.ThreadID)
+	if appErr != nil {
+		p.API.LogError(fmt.Sprintf("error retrieving thread post: %s", appErr.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if post.Type != model.POST_DEFAULT {
+		p.API.LogError(fmt.Sprintf("unmovable post type %s", post.Type))
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if currentUserID != post.UserId {
+		err = p.hasMoveAccess(currentUserID, post)
+		if err != nil {
+			p.API.LogError(fmt.Sprintf("%+v", err), "user_id", currentUserID, "post_id", postID)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+
+	newPost := &model.Post{
+		UserId:       post.UserId,
+		ChannelId:    threadPost.ChannelId,
+		RootId:       threadPost.Id,
+		ParentId:     threadPost.Id,
+		Message:      post.Message, // TODO: Apply template.
+		Props:        post.Props,
+		Hashtags:     post.Hashtags,
+		FileIds:      post.FileIds,
+		HasReactions: post.HasReactions,
+		Metadata:     post.Metadata,
+	}
+
+	newPost, appErr = p.API.CreatePost(newPost)
+	if appErr != nil {
+		p.API.LogError(fmt.Sprintf("error creating new post: %s", appErr.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if currentUserID == post.UserId {
+		appErr = p.API.DeletePost(post.Id)
+		if appErr != nil {
+			p.API.LogError(fmt.Sprintf("error deleting original post: %s", appErr.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	} else {
+		currentUser, appErr := p.API.GetUser(currentUserID)
+		if appErr != nil {
+			p.API.LogError(fmt.Sprintf("error getting current user: %s", appErr.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		newPostChannel, appErr := p.API.GetChannel(newPost.ChannelId)
+		if appErr != nil {
+			p.API.LogError(fmt.Sprintf("error getting channel: %s", appErr.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		team, appErr := p.API.GetTeam(newPostChannel.TeamId)
+		if appErr != nil {
+			p.API.LogError(fmt.Sprintf("error getting team: %s", appErr.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		newPostURL := fmt.Sprintf("%s/%s/pl/%s", *p.API.GetConfig().ServiceSettings.SiteURL, team.Name, newPost.Id)
+		post.Message, err = p.applyEditTemplate(post.Message, currentUser.Username, newPostURL)
+		if err != nil {
+			p.API.LogError(fmt.Sprintf("error applying temnplate: %s", appErr.Error()))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		p.API.UpdatePost(post)
+	}
 }
 
-func (p *MovePostPlugin) hasMoveAccess(userID, postID string) error {
-	if userID == postID {
-		return nil
-	}
-
-	post, err := p.API.GetPost(postID)
+func (p *MovePostPlugin) applyEditTemplate(postMessage, username, newPostURL string) (string, error) {
+	pluginConfig := p.API.GetPluginConfig()
+	configSetting := pluginConfig[PluginConfigMoveOthersTemplate]
+	editTemplate := configSetting.(string)
+	t := template.Must(template.New("letter").Parse(editTemplate))
+	buf := new(bytes.Buffer)
+	err := t.Execute(buf, templateData{Permalink: newPostURL, MoverUsername: username, Message: postMessage})
 	if err != nil {
-		return xerrors.Errorf("error retrieving post: %s", err.Error())
+		return "", err
 	}
+	return buf.String(), nil
+}
 
-	// user, err := p.API.GetUser(userID)
-	// if err != nil {
-	// 	return xerrors.Errorf("error retrieving user: %s", err.Error())
-	// }
-
+func (p *MovePostPlugin) hasMoveAccess(userID string, post *model.Post) error {
 	requiredChannelPerms := []*model.Permission{model.PERMISSION_EDIT_OTHERS_POSTS, model.PERMISSION_DELETE_OTHERS_POSTS}
 
 	for _, perm := range requiredChannelPerms {
 		if !p.API.HasPermissionToChannel(userID, post.ChannelId, perm) {
-			return PermissionDeniedError{Permission: perm, ChannelID: post.ChannelId, frame: xerrors.Caller(1)}
+			return xerrors.Errorf("permission %v denied", perm.Id)
 		}
 	}
 

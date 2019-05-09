@@ -17,5 +17,3 @@ curl -sX POST \
   -H 'boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW' \
   -F plugin=@${PWD}/bundle/${BUNDLE_NAME} \
   -F force=true | jq
-
-echo -n '\007'

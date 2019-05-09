@@ -1,6 +1,9 @@
-.PHONY: build
-build:
+.PHONY: build-webapp
+build-webapp:
 	cd webapp && npm run build && cd ..
+
+.PHONY: build-server
+build-server:
 	mkdir -p server/dist;
 	cd server/src && env GOOS=linux GOARCH=amd64 go build -o ../dist/plugin-linux-amd64;
 	cd server/src && env GOOS=darwin GOARCH=amd64 go build -o ../dist/plugin-darwin-amd64;
@@ -14,6 +17,10 @@ bundle:
 deploy:
 	./deploy.sh
 
-.PHONY: watch
-watch:
-	watch 'make build && make bundle && make deploy' webapp/src/ assets/ server/src/
+.PHONY: watch-server
+watch-server:
+	watch 'make build-server && make bundle && make deploy' server/src/
+
+.PHONY: watch-webapp
+watch-webapp:
+	watch 'make build-webapp && make bundle && make deploy' webapp/src/ assets/

@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from 'axios';
 import { createPostImmediately, deletePost, removePost, editPost } from 'mattermost-redux/actions/posts';
 import { getConfig } from 'mattermost-redux/actions/admin';
 import { haveIChannelPermission } from 'mattermost-redux/selectors/entities/roles';
@@ -6,10 +7,7 @@ import { getCurrentTeamId } from 'mattermost-redux/selectors/entities/teams';
 import { getCurrentUser } from 'mattermost-redux/selectors/entities/users';
 import { Permissions } from 'mattermost-redux/constants';
 
-const TEMPLATE_VARIABLE_PERMALINK = '{{Permalink}}';
-const TEMPLATE_VARIABLE_MOVER_USERNAME = '{{MoverUsername}}';
-
-let moveOthersTemplate = '';
+let pluginID = '';
 
 class MovePostPlugin {
     async initialize(registry, store) {
@@ -18,78 +16,18 @@ class MovePostPlugin {
             (postID) => this.onClickMenuItem(postID),
             (postID) => this.shouldShowMenuItem(postID)
         );
-
-        const response = await store.dispatch(getConfig());
-        const { move_others_template } = response.data.PluginSettings.Plugins[registry.id];
-        moveOthersTemplate = move_others_template;
+        pluginID = registry.id;
     }
 
     async onClickMenuItem(postID) {
         const state = store.getState();
-        const post = state.entities.posts.posts[postID];
-        const { selectedPostId: rhsPostID, selectedChannelId: rhsChannelID } = state.views.rhs;
-
-        if (!post || !rhsPostID) {
-            console.warn(`not able to move post_id: ${post.id}, rhsPostID: ${rhsPostID}`);
-            return
-        }
-
-        const now = Date.now();
-
-        const newPost = {
-            "file_ids": [],
-            "message": post.message,
-            "channel_id": rhsChannelID,
-            "root_id": rhsPostID,
-            "parent_id": rhsPostID,
-            "pending_post_id": `${post.user_id}:${now}`,
-            "user_id": post.user_id,
-            "create_at": now
-        };
-
-        let files = [];
-
-        // if (post.file_ids) {
-        //     files = post.file_ids.map((id) => {
-        //         const stateFileInfo = state.entities.files.files[id];
-        //         const fileInfo = { ...stateFileInfo };
-        //         delete fileInfo.post_id;
-        //         return fileInfo;
-        //     });
-        // }
-
-        console.log('newPost', JSON.stringify(newPost));
-
-        const { error: createErr, data: newPostData } = await store.dispatch(createPostImmediately(newPost, files));
-        if (createErr) {
-            console.warn(`Error creating new post: ${createErr}`);
-            return;
-        }
-
-        const { id: currentUserID } = getCurrentUser(state);
-        if (post.user_id !== currentUserID) {
-            const message = this.getReplacementMessage(state, newPostData.id);
-            const editingPost = { ...post, ...{ message } };
-
-            const { error: editError } = await store.dispatch(editPost(editingPost));
-            if (editError) {
-                console.warn(`Error editing old post: ${editError}`);
-                return;
+        const { selectedPostId: rhsPostID } = state.views.rhs;
+        const instance = axios.create({
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
             }
-            return;
-        }
-
-        const { error: deleteErr } = await store.dispatch(deletePost(post));
-        if (deleteErr) {
-            console.warn(`Error deleting old post: ${deleteErr}`);
-            return;
-        }
-
-        const { error: removeErr } = store.dispatch(removePost(post));
-        if (removeErr) {
-            console.warn(`Error removing old post: ${removeErr}`);
-            return;
-        }
+        });
+        instance.post(`/plugins/${pluginID}/api/v1/posts/${postID}/move`, { thread_id: rhsPostID });
     }
 
     shouldShowMenuItem(postID) {
@@ -149,17 +87,6 @@ class MovePostPlugin {
             isLicensed = val;
         }
         return isLicensed;
-    }
-
-    getReplacementMessage(state, newPostID) {
-        const currentTeamID = getCurrentTeamId(state);
-        const { username: moverUsername } = getCurrentUser(state);
-        const { name: currentTeamName } = state.entities.teams.teams[currentTeamID];
-        const { SiteURL: basePath } = state.entities.general.config;
-        const permalink = `${basePath}/${currentTeamName}/pl/${newPostID}`
-        let replacementMessage = moveOthersTemplate.replace(TEMPLATE_VARIABLE_PERMALINK, permalink);
-        replacementMessage = replacementMessage.replace(TEMPLATE_VARIABLE_MOVER_USERNAME, moverUsername);
-        return replacementMessage;
     }
 }
 
