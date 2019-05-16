@@ -3,22 +3,10 @@
 1) Install [jq](https://stedolan.github.io/jq/)
 2) `npm i`
 
-### Build
-
-```bash
-make build
-```
-
-### Bundle
+### Bundle for a release
 
 ```bash
 make bundle
-```
-
-### Deploy
-
-```bash
-MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 make deploy
 ```
 
 ### Development watcher (build, bundle, and deploy upon changes in webapp/src/)
