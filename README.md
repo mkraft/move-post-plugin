@@ -29,7 +29,7 @@ The new post will have a custom type value `custom_moved_post_dest` and contain 
 ## Development setup
 
 1) Install [jq](https://stedolan.github.io/jq/)
-2) `npm i`
+2) `cd webapp/ && npm i`
 
 ## Building the plugin
 
@@ -53,6 +53,8 @@ make watch-webapp
 
 ## TODO
 
+- [ ] Cleanup the hastily-written code
+- [ ] Add tests
 - [ ] Conditionally hide menu items that aren't able to be used on mobile view
 - [ ] Add ability to move a post to another team
 - [ ] Add a UX that also works on mobile web view
