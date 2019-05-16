@@ -26,7 +26,7 @@ make watch-webapp
 ### Current Limitations
 
 * Cannot move a post with attachments (coming soon)
-* Cannot move a post that is a root post of a thread (coming soon)
+* Cannot move a post that is already in a thread
 
 ### TODO
 
