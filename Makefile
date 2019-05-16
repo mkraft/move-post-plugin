@@ -10,7 +10,7 @@ build-server:
 	cd server/src && env GOOS=windows GOARCH=amd64 go build -o ../dist/plugin-windows-amd64;
 
 .PHONY: bundle
-bundle:
+bundle: build-webapp build-server
 	./bundle.sh
 
 .PHONY: deploy

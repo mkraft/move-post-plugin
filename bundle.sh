@@ -10,7 +10,7 @@ mkdir -p bundle/${PLUGIN_ID}/server
 cp plugin.json bundle/${PLUGIN_ID}/
 cat plugin.json | jq ".version = \"${VERSION}\"" > bundle/${PLUGIN_ID}/plugin.json
 
-cp -r webapp/dist/* bundle/${PLUGIN_ID}/webapp
-cp -r server/dist/* bundle/${PLUGIN_ID}/server
+cp -r webapp/dist bundle/${PLUGIN_ID}/webapp
+cp -r server/dist bundle/${PLUGIN_ID}/server
 
 cd bundle && tar -cvzf ${BUNDLE_NAME} .
