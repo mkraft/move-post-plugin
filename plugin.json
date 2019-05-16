@@ -11,17 +11,5 @@
             "darwin-amd64": "server/plugin-darwin-amd64",
             "windows-amd64": "server/plugin-windows-amd64.exe"
         }
-    },
-    "settings_schema": {
-        "settings": [
-            {
-                "key": "move_others_template",
-                "display_name": "Move Others' Posts Template",
-                "type": "text",
-                "help_text": "When moving another user's post, this template will be used to replace the original post message. Markdown is accepted and the following variables are interpolated:\n* `{{.Permalink}}`\n* `{{.MoverUsername}}`\n* `{{.Message}}`",
-                "placeholder": "[moved to thread]({{.Permalink}}) by @{{.MoverUsername}}",
-                "default": "[moved to thread]({{.Permalink}}) by @{{.MoverUsername}}"
-            }
-        ]
     }
 }

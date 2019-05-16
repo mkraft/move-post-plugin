@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -16,10 +14,9 @@ import (
 )
 
 const (
-	PluginConfigMoveOthersTemplate = "move_others_template"
-	PostTypeMovedDestination       = "custom_moved_post_dest"
-	PropMoverID                    = "mover_id"
-	PropOriginPostID               = "origin_post_id"
+	PostTypeMovedDestination = "custom_moved_post_dest"
+	PropMoverID              = "mover_id"
+	PropOriginPostID         = "origin_post_id"
 )
 
 type MovePostPlugin struct {
@@ -28,12 +25,6 @@ type MovePostPlugin struct {
 
 type payload struct {
 	ThreadID string `json:"thread_id"`
-}
-
-type templateData struct {
-	Permalink     string
-	MoverUsername string
-	Message       string
 }
 
 func (p *MovePostPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
@@ -158,19 +149,6 @@ func (p *MovePostPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *
 			CreateAt:  model.GetMillis(),
 		})
 	}
-}
-
-func (p *MovePostPlugin) applyEditTemplate(postMessage, username, newPostURL string) (string, error) {
-	pluginConfig := p.API.GetPluginConfig()
-	configSetting := pluginConfig[PluginConfigMoveOthersTemplate]
-	editTemplate := configSetting.(string)
-	t := template.Must(template.New("letter").Parse(editTemplate))
-	buf := new(bytes.Buffer)
-	err := t.Execute(buf, templateData{Permalink: newPostURL, MoverUsername: username, Message: postMessage})
-	if err != nil {
-		return "", err
-	}
-	return buf.String(), nil
 }
 
 func (p *MovePostPlugin) newPostPermalink(newPost *model.Post) (string, error) {
