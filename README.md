@@ -21,7 +21,7 @@ make bundle
 MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 make deploy
 ```
 
-### Development watcher (build, bundle, and deploy upon changes in webapp/src/ and assets/)
+### Development watcher (build, bundle, and deploy upon changes in webapp/src/)
 
 ```bash
 MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 make watch

@@ -23,4 +23,4 @@ watch-server:
 
 .PHONY: watch-webapp
 watch-webapp:
-	watch 'make build-webapp && make bundle && make deploy' webapp/src/ assets/
+	watch 'make build-webapp && make bundle && make deploy' webapp/src/
