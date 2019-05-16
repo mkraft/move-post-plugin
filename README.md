@@ -13,6 +13,12 @@ Move a Mattermost post to the currently open thread.
 * **Team Edition**: move your own posts
 * **Enterprise Edition**: Move others' posts with the combination of `Edit Others' Posts` and `Delete Others' Posts` permissions to the given channel(s).
 
+Moving another user's post will trigger an ephemeral post visible only to the original poster with a permalink to the new location of their post and the username of the mover, for example:
+
+![ephemeral-post](ephemeral-post.png "Ephemeral post")
+
+The new post will have a custom type value `custom_moved_post_dest` and contain the props `mover_id` and `origin_post_id`.
+
 ## Current Limitations
 
 * Cannot move a post with attachments (coming soon)
