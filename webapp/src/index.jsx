@@ -16,6 +16,10 @@ class MovePostPlugin {
             (postID) => this.onClickMenuItem(postID),
             (postID) => this.shouldShowMenuItem(postID)
         );
+        
+        // TODO: Register custom post type to render moved posts with a badge, or something.
+        // registry.registerPostTypeComponent("custom_moved_post", component);
+        
         pluginID = registry.id;
     }
 

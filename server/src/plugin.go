@@ -15,7 +15,12 @@ import (
 	"golang.org/x/xerrors"
 )
 
-const PluginConfigMoveOthersTemplate = "move_others_template"
+const (
+	PluginConfigMoveOthersTemplate = "move_others_template"
+	PostTypeMovedDestination       = "custom_moved_post_dest"
+	PropMoverID                    = "mover_id"
+	PropOriginPostID               = "origin_post_id"
+)
 
 type MovePostPlugin struct {
 	plugin.MattermostPlugin
@@ -106,13 +111,17 @@ func (p *MovePostPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *
 		ChannelId:    threadPost.ChannelId,
 		RootId:       threadPost.Id,
 		ParentId:     threadPost.Id,
-		Message:      post.Message, // TODO: Apply template.
+		Message:      post.Message,
 		Props:        post.Props,
 		Hashtags:     post.Hashtags,
 		FileIds:      post.FileIds,
 		HasReactions: post.HasReactions,
 		Metadata:     post.Metadata,
+		Type:         PostTypeMovedDestination,
 	}
+
+	newPost.AddProp(PropMoverID, currentUserID)
+	newPost.AddProp(PropOriginPostID, post.Id)
 
 	newPost, appErr = p.API.CreatePost(newPost)
 	if appErr != nil {
@@ -121,40 +130,33 @@ func (p *MovePostPlugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *
 		return
 	}
 
-	if currentUserID == post.UserId {
-		appErr = p.API.DeletePost(post.Id)
-		if appErr != nil {
-			p.API.LogError(fmt.Sprintf("error deleting original post: %s", appErr.Error()))
+	appErr = p.API.DeletePost(post.Id)
+	if appErr != nil {
+		p.API.LogError(fmt.Sprintf("error deleting original post: %s", appErr.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if currentUserID != post.UserId {
+		permalink, err := p.newPostPermalink(newPost)
+		if err != nil {
+			p.API.LogError(fmt.Sprintf("error getting new post permalink: %s", err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	} else {
+
 		currentUser, appErr := p.API.GetUser(currentUserID)
 		if appErr != nil {
 			p.API.LogError(fmt.Sprintf("error getting current user: %s", appErr.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		newPostChannel, appErr := p.API.GetChannel(newPost.ChannelId)
-		if appErr != nil {
-			p.API.LogError(fmt.Sprintf("error getting channel: %s", appErr.Error()))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		team, appErr := p.API.GetTeam(newPostChannel.TeamId)
-		if appErr != nil {
-			p.API.LogError(fmt.Sprintf("error getting team: %s", appErr.Error()))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		newPostURL := fmt.Sprintf("%s/%s/pl/%s", *p.API.GetConfig().ServiceSettings.SiteURL, team.Name, newPost.Id)
-		post.Message, err = p.applyEditTemplate(post.Message, currentUser.Username, newPostURL)
-		if err != nil {
-			p.API.LogError(fmt.Sprintf("error applying temnplate: %s", appErr.Error()))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		p.API.UpdatePost(post)
+
+		p.API.SendEphemeralPost(post.UserId, &model.Post{
+			Message:   fmt.Sprintf("Your post was [moved](%s) by @%s.", permalink, currentUser.Username),
+			ChannelId: post.ChannelId,
+			CreateAt:  model.GetMillis(),
+		})
 	}
 }
 
@@ -169,6 +171,21 @@ func (p *MovePostPlugin) applyEditTemplate(postMessage, username, newPostURL str
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func (p *MovePostPlugin) newPostPermalink(newPost *model.Post) (string, error) {
+	newPostChannel, appErr := p.API.GetChannel(newPost.ChannelId)
+	if appErr != nil {
+		return "", appErr
+	}
+
+	team, appErr := p.API.GetTeam(newPostChannel.TeamId)
+	if appErr != nil {
+		return "", appErr
+	}
+
+	newPostURL := fmt.Sprintf("%s/%s/pl/%s", *p.API.GetConfig().ServiceSettings.SiteURL, team.Name, newPost.Id)
+	return newPostURL, nil
 }
 
 func (p *MovePostPlugin) hasMoveAccess(userID string, post *model.Post) error {
