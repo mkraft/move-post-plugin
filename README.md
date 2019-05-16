@@ -9,10 +9,18 @@
 make bundle
 ```
 
-### Development watcher (build, bundle, and deploy upon changes in webapp/src/)
+### Development watchers
 
 ```bash
-MM_ADMIN_USERNAME=sysadmin MM_ADMIN_PASSWORD=test123 make watch
+MM_ADMIN_USERNAME=sysadmin \
+MM_ADMIN_PASSWORD=test123 \
+make watch-server
+```
+
+```bash
+MM_ADMIN_USERNAME=sysadmin \
+MM_ADMIN_PASSWORD=test123 \
+make watch-webapp
 ```
 
 ### Current Limitations
