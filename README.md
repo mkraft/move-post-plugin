@@ -53,7 +53,6 @@ make watch-webapp
 
 ## TODO
 
-- [ ] Cleanup the hastily-written code
 - [ ] Add tests
 - [ ] Conditionally hide menu items that aren't able to be used on mobile view
 - [ ] Add ability to move a post to another team
