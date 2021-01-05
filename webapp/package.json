@@ -21,7 +21,7 @@
         "webpack-cli": "^3.3.0"
     },
     "dependencies": {
-        "axios": ">=0.18.1",
+        "axios": ">=0.21.1",
         "core-js": "^2.6.5",
         "mattermost-redux": "^5.10.0",
         "react": "^16.8.6"
